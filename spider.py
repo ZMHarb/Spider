@@ -3,9 +3,9 @@
 '''
 usage:
 ------
-spider.py [url] -l 
-spider.py [url] -d -w [FILE]                               
-spider.py [url] -s -w [FILE] -t [int]                     
+spider.py [url] -l -v
+spider.py [url] -d -w [FILE] -vvv
+spider.py [url] -s -w [FILE] -t [int] -vv                     
 spider.py [url] -a -w [FILE] [FILE] -o [FILE]
 spider.py [url] -d -x -w [FILE] -t [int]          
 spider.py [url] --all-links 
@@ -77,10 +77,10 @@ class Spider:
         #list used to store the subdomains of a website, so it will be used in the recursive mode
         self.subdomains_list = []
 
-        self.nbr_links = 0
         #links already scanned
         self.previous_links = []
 
+        self.nbr_links = 0
         self.nbr_dirs = 0
         self.nbr_subdomains = 0
 
@@ -163,11 +163,10 @@ class Spider:
                             file.write("[+] Dir --> " + test_url + "\n")
                         else:
                             file.write(test_url + "\n")
+                if self.verbosity >= 1:
+                    print(f"{Fore.GREEN}[+] Dir --> {Fore.RESET + test_url}")
                 else:
-                    if self.verbosity >= 1:
-                        print(f"{Fore.GREEN}[+] Dir --> {Fore.RESET + test_url}")
-                    else:
-                        print(test_url)
+                    print(test_url)
 
             #if no response, means the subdomain is invalid
             else:
@@ -175,8 +174,7 @@ class Spider:
                     if self.output:
                         with open(self.output, "a") as file:
                             file.write("[-] Invalid Dir --> " + test_url + "\n")
-                    else:
-                        print(f"{Fore.RED}[-] Invalid Dir --> {Fore.RESET + test_url}", end="\r")
+                    print(f"{Fore.RED}[-] Invalid Dir --> {Fore.RESET + test_url}", end="\r")
 
         #if the mode is recursive, we will search for the dirs in subdomains
         if self.recursive and len(self.subdomains_list) > 0:
@@ -192,8 +190,7 @@ class Spider:
                             with open(self.output, "a") as file:
                                 file.write("[+] SubDomain Dir --> " + test_url + "\n")
 
-                        else:
-                            print(f"{Fore.GREEN}[+] SubDomain Dir --> {Fore.RESET + test_url}")
+                        print(f"{Fore.GREEN}[+] SubDomain Dir --> {Fore.RESET + test_url}")
                     
 
     def linkfinder(self, url, allinks):
@@ -235,11 +232,10 @@ class Spider:
                                     file.write("[+] Link --> " + link + "\n")
                                 else:
                                     file.write(link + "\n")
+                        if self.verbosity >= 1:
+                            print(f"{Fore.GREEN}[+] Link --> {Fore.RESET + link}")
                         else:
-                            if self.verbosity >= 1:
-                                print(f"{Fore.GREEN}[+] Link --> {Fore.RESET + link}")
-                            else:
-                                print(link)
+                            print(link)
                     
                         #To extract also the urls from the internal links
                         self.linkfinder(link, allinks) 
@@ -258,16 +254,15 @@ class Spider:
                                     file.write("[+] Link --> " + link + "\n")
                                 else:
                                     file.write(link + "\n")
+                        if self.verbosity >= 1:
+                            print(f"{Fore.GREEN}[+] Link --> {Fore.RESET + link}")
                         else:
-                            if self.verbosity >= 1:
-                                print(f"{Fore.GREEN}[+] Link --> {Fore.RESET + link}")
-                            else:
-                                print(link)
+                            print(link)
                         
                         #To extract also the urls from the internal links
                         self.linkfinder(link, allinks) 
     
-        except TypeError:
+        except:
             pass
 
     def sub_linkfinder(self):
@@ -296,11 +291,10 @@ class Spider:
                                     else:
                                         file.write(sub_link + "\n")
 
+                            if self.verbosity >= 1:
+                                print(f"{Fore.GREEN}[+] SubDomain Link --> {Fore.RESET + sub_link}")
                             else:
-                                if self.verbosity >= 1:
-                                    print(f"{Fore.GREEN}[+] SubDomain Link --> {Fore.RESET + sub_link}")
-                                else:
-                                    print(sub_link)
+                                print(sub_link)
 
                             self.sub_linkfinder(sub_link) #To extract also the urls from the internal links
 
@@ -318,9 +312,9 @@ parser.add_argument("-q", "--quiet", action="store_true", default=False, help="Q
 arg = parser.add_argument_group("arguments")
 
 arg.add_argument("-a", "--all", dest="all", action="store_true", help="all actions combined\n\n")
-arg.add_argument("--all-links", dest="allinks", action="store_true", help="Will print all the links on the website, even the external ones\n\n")
 arg.add_argument("-d", "--dirs", dest="dirs", action="store_true", help="Discovering Websites' hidden directories. (Needs a wordlist)\n\n")
 arg.add_argument("-l", "--links", dest="links", action="store_true", help="Extract Websites Links related to the url\n\n")
+arg.add_argument("--all-links", dest="allinks", action="store_true", help="Will print all the links on the website, even the external ones\n\n")
 arg.add_argument("-r", "--recursive", action="store_true", help="exhausted crawl (recursively).\n\n")
 arg.add_argument("-s", "--subdomains", dest="subdomains", action="store_true", help="Discovering Websites' Subdomains. (Needs a wordlist)\n\n")
 arg.add_argument("-t", "--threads", dest="threads", type=int, default=10, help="Number of threads. (Default is 10)\n\n")
@@ -328,7 +322,7 @@ arg.add_argument("-w", "--wordlists", dest="wordlists", nargs="*", default=[], h
 
 arguments = parser.parse_args()
 if not arguments.quiet:
-    print(banner)
+    print(f"{Fore.GREEN}{banner}{Fore.RESET}")
 
 if not arguments.url:
     parser.print_help()
@@ -383,11 +377,14 @@ if arguments.links or arguments.allinks:
 if arguments.subdomains:
 
     wordlist = read_file(filtered_wordlists[1])
+    
+    if len(wordlist) == 0:
+        print(f"{Fore.RED}[-]{Fore.RESET} The wordlist '{filtered_wordlists[1]}' is empty\n")
+        exit()
 
     if len(wordlist) < arguments.threads or arguments.threads <=0:
 
-        print(f"\n{Fore.RED}Error: {Fore.RESET}Number of threads should be lower than wordlist's size and higher than 0")
-        exit()
+        arguments.threads = len(wordlist)
 
     lists = prepare_list(wordlist, arguments.threads)
     
@@ -399,10 +396,13 @@ if arguments.dirs:
 
     wordlist = read_file(filtered_wordlists[0])
     
-    if len(wordlist) < arguments.threads or arguments.threads <=0:
-
-        print(f"\n{Fore.RED}Error: {Fore.RESET}Number of threads should be lower than wordlist's size and higher than 0")
+    if len(wordlist) == 0:
+        print(f"{Fore.RED}[-]{Fore.RESET} The wordlist '{filtered_wordlists[0]}' is empty\n")
         exit()
+
+    if len(wordlist) < arguments.threads or arguments.threads <=0:
+        
+        arguments.threads = len(wordlist)
 
     nbr_sub_list = len(wordlist) // arguments.threads
     lists = prepare_list(wordlist, nbr_sub_list)
@@ -443,3 +443,4 @@ if arguments.subdomains:
 
 end = ctime()
 print(f"\n\n{Fore.BLUE}[*] {Fore.RESET}Finish at {end}")
+
